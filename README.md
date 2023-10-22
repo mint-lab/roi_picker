@@ -1,39 +1,58 @@
 
-# ROI PICKER
+## ROI Picker
+_ROI Picker_ is a simple tool to visualize [region-of-interest](https://en.wikipedia.org/wiki/Region_of_interest)s (ROIs) and edit them. It is common for many computer vision tasks to define or assign ROIs on an image. _ROI picker_ can provide simple GUI to add, modify, and remove ROIs without complex packages or libraries. _ROI Picker_ is written with [Python](https://www.python.org/) and [OpenCV](https://opencv.org/).
 
-This repository is intended for drawing points, polygons, and lines on an image and saving their data for labeling purposes.
+_ROI Picker_ now supports the following ROI shapes. Of course, users can extend more through class inheritance or modification.
+
+* A set of points
+* A set of line segments
+* A polygon
+
+The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
 
 
 
-
-## Usage
-* Command: `python --org roi_tool.py --des org_path des_path`
-  * Where:
-    * `org_path`: Path to load images.
-    * `des_path`: The name of the folder to save the result.
-   
-
+### How to Run ROI Picker
+* Prerequisite) If you don't install OpenCV, please install OpenCV: `pip install opencv-python`.
+* Command) `python roi_picker.py img_file [--roi roi_file.json] [--config config_file.json]`
+  * `--roi`: Specify a ROI file which contains ROI data (Default: `image_file.json`)
+  * `--config`: Specify a configuration file which can change visualization and GUI interface (Default: `roi_picker.json`)
+  * :memo: Note) If a default file does not exist, _ROI Picker_ just starts with empty ROI or with its initial configuration.
 * Usage examples
-  ```
-  python roi_tool.py --org image/210812_camera400.png --des result
-  python roi_tool.py --org image/210812_camera500.png --des result
-  ```
-## GUI feature
- * Keyboard shortcuts
-    * ESC: Terminate this program.
-    * CTRL+A: Add a new POLYGON.
-    * CTRL+W: Add a new LINELINE.
-    * CTRL+Q: Add a new POINT.
-    * CTRL+N: Remove all points.
-    * CTRL+D: Remove all points for the current ROI.
-    * CTRL+E: Scale up.
-    * CTRL+R: Scale down.
-    * CTRL+X: Save ROI.
-    * CTRL+L: Load ROI.
+  * `python roi_picker.py demo/miraehall_satellite.png`
+    * Start _ROI Picker_ with its default ROI file (`demo/miraehall_satellite.json`) and default configuration file (`roi_picker.json`)
+  * `python roi_picker.py demo/miraehall_220722.png --roi demo/miraehall_image.json`
+    * Start _ROI Picker_ with the specific ROI file (`demo/miraehall_image.json`)
+  * `python roi_picker.py demo/miraehall_satellite.png --config demo/bold_style.json`
 
-  * Mouse shortcuts
-    * DOUBLE CLICK: Add, Insert and Delete a point for the current ROI.
-        * Add: If that point doesn't exist yet.
-        * Delete: If the point just added and the point already exist almost the same.
-        * Insert: If the point just added is on a line segment.
-    * DRAG: Move the selected point.
+
+
+### GUI Interface
+ * :memo: Note) _ROI Picker_ does not provide any menu or button for simplicity. Its GUI inputs are totally based on mouse and keyboard.
+   
+ * **Mouse Actions**
+    * _Double Click_: Add or delete a point
+        * If you _double click_ on an image, a new point will be added.
+        * If you _double click_ at an existing point, the point will be removed.
+        * If you _double click_ on an existing line (for line segment or polygon), a new point will be inserted on the line.
+    * _Drag_: Move the selected point
+ * **Keyboard Shortcuts**
+    * `ESC`: Terminate _ROI Picker_
+    * `Tab`: Select the next ROI
+    * `Ctrl`+`P`: Add a new set of **p**oints
+    * `Ctrl`+`L`: Add a new set of **l**ine segment
+    * `Ctrl`+`G`: Add a new poly**g**on
+    * `Ctrl`+`R`: **R**enew _ROI Picker_ (Clear all ROIs)
+    * `Ctrl`+`D`: **D**elete the selected ROI
+    * `Ctrl`+`I`: **I**mport ROI data from the ROI file
+    * `Ctrl`+`E`: **E**xport ROI data to the ROI file
+    * `Ctrl`+`T`: Show and hide the s**t**atus of the selected ROI
+    * `Ctrl`+`M`: Show and hide the image **m**agnifier
+    * `Ctrl`+`+`: Zoom up the image
+    * `Ctrl`+`-`: Zoom down the image
+
+
+
+### Authors
+* [Nguyen Cong Quy](https://github.com/ncquy)
+* [Sunglok Choi](https://mint-lab.github.io/sunglok/)

@@ -30,7 +30,6 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
 
 ### GUI Interface
  * :memo: Note) _ROI Picker_ does not provide any menu or button for simplicity. Its GUI inputs are totally based on mouse and keyboard.
-   
  * **Mouse Actions**
     * _Double Click_: Add or delete a point
         * If you _double click_ on an image, a new point will be added.
@@ -47,10 +46,10 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
     * `Ctrl`+`D`: **D**elete the selected ROI
     * `Ctrl`+`I`: **I**mport ROI data from the ROI file
     * `Ctrl`+`E`: **E**xport ROI data to the ROI file
+    * `Ctrl`+`Z`: Show and hide the image **z**oom
     * `Ctrl`+`T`: Show and hide the s**t**atus of the selected ROI
-    * `Ctrl`+`M`: Show and hide the image **m**agnifier
-    * `+`: Scale up the image
-    * `-`: Scale down the image
+    * `+`: Zoom up the image
+    * `-`: Zoom down the image
 
 
 

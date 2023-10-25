@@ -2,7 +2,6 @@ import argparse
 import json
 import numpy as np
 import cv2 as cv
-import opencx as cx
 from random import randrange
 
 
@@ -297,7 +296,7 @@ class ROIPicker:
                 if id >= 10: # If `id` is two-digit
                     id_pos[0] += config['roi_id_offset'][0]
                 color_inv = [255 - v for v in roi['color']]
-                cx.putText(canvas, str(id), id_pos, config['roi_id_font'], config['roi_id_font_scale'], roi['color'], config['roi_id_font_thickness'], color_inv)
+                putText(canvas, str(id), id_pos, config['roi_id_font'], config['roi_id_font_scale'], roi['color'], config['roi_id_font_thickness'], color_inv)
             else:
                 cv.line(canvas, center - (config['roi_point_radius'], 0), center + (config['roi_point_radius'], 0), roi['color'], config['roi_id_font_thickness'])
                 cv.line(canvas, center - (0, config['roi_point_radius']), center + (0, config['roi_point_radius']), roi['color'], config['roi_id_font_thickness'])
@@ -340,7 +339,7 @@ class ROIPicker:
         pt = (self.mouse_pt[0] / self.config['image_scale'], self.mouse_pt[1] / self.config['image_scale'])
         status += f' | mouse: ({pt[0]:.1f}, {pt[1]:.1f})'
         status += f' | zoom: {self.config["image_scale"]:.1f}'
-        cx.putText(canvas, status, self.config['status_offset'], self.config['status_font'], self.config['status_font_scale'], status_color, self.config['status_font_thickness'])
+        putText(canvas, status, self.config['status_offset'], self.config['status_font'], self.config['status_font_scale'], status_color, self.config['status_font_thickness'])
 
 
     @staticmethod
@@ -410,6 +409,23 @@ def check_on_a_line(query, pts, threshold):
 def randcolor():
     '''Return a random color'''
     return (randrange(255), randrange(255), randrange(255))
+
+
+def putText(img, text, org_tl, fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(255, 255, 255), thickness=1, colorOutline=(0, 0, 0), thicknessOutline=2, lineSpacing=1.5):
+    '''Draw a multi-line text with outline'''
+    assert isinstance(text, str)
+
+    org_tl = np.array(org_tl, dtype=float)
+    assert org_tl.shape == (2,)
+
+    for line in text.splitlines():
+        (_, h), _ = cv.getTextSize(text=line, fontFace=fontFace, fontScale=fontScale, thickness=thickness)
+        org = tuple((org_tl + [0, h]).astype(int))
+
+        if colorOutline is not None:
+            cv.putText(img, text=line, org=org, fontFace=fontFace, fontScale=fontScale, color=colorOutline, thickness=thickness*thicknessOutline, lineType=cv.LINE_AA)
+        cv.putText(img, text=line, org=org, fontFace=fontFace, fontScale=fontScale, color=color, thickness=thickness, lineType=cv.LINE_AA)
+        org_tl += [0, h * lineSpacing]
 
 
 def read_json_file(filename):

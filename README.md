@@ -1,6 +1,6 @@
 
 ## ROI Picker
-_ROI Picker_ is a simple tool to visualize [region-of-interest](https://en.wikipedia.org/wiki/Region_of_interest)s (ROIs) and edit them. It is common for many computer vision tasks to define or assign ROIs on an image. _ROI picker_ can provide simple GUI to add, modify, and remove ROIs without complex packages or libraries. _ROI Picker_ is written with [Python](https://www.python.org/) and [OpenCV](https://opencv.org/).
+_ROI Picker_ is a simple tool to visualize [region-of-interest](https://en.wikipedia.org/wiki/Region_of_interest)s (ROIs) and edit them. It is common for many computer vision tasks to define or select ROIs on an image. _ROI picker_ can provide simple GUI to add, modify, and remove ROIs without complex packages or libraries. _ROI Picker_ is written with [Python](https://www.python.org/) and [OpenCV](https://opencv.org/), and it works with a single Python file, `roi_picker.py`.
 
 _ROI Picker_ now supports the following ROI shapes. Of course, users can extend more through class inheritance or modification.
 

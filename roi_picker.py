@@ -295,7 +295,7 @@ class ROIPicker:
         for pt in roi['pts']:
             # Draw a point with its ID
             center = np.array(pt).astype(np.int32)
-            if config['roi_point_radius'] > 0:
+            if config['roi_point_thickness'] > 0:
                 cv.circle(canvas, center, config['roi_point_radius'], roi['color'], config['roi_point_thickness'])
             if config['roi_id_font_scale'] > 0:
                 id_pos = center + config['roi_id_offset']
@@ -457,14 +457,10 @@ def write_json_file(filename, data):
 
 if __name__ == "__main__":
     # Add arguments to the parser
-    parser = argparse.ArgumentParser(prog='ROI Picker',
-                                     description='A simple OpenCV tool to visualize and edit ROIs on images')
-    parser.add_argument('image_file',
-                        type=str, help='Specify an image file as background')
-    parser.add_argument('roi_file', '-r', default='',
-                        type=str, help='Specify a ROI file which contains ROI data')
-    parser.add_argument('config_file', '-c', default='roi_picker.json',
-                        type=str, help='Specify a configuration file')
+    parser = argparse.ArgumentParser(prog='ROI Picker', description='A simple OpenCV tool to visualize and edit ROIs on images')
+    parser.add_argument('image_file', type=str, help='specify an image file as background')
+    parser.add_argument('-r', '--roi_file', default='', type=str, help='specify a ROI file which contains ROI data')
+    parser.add_argument('-c', '--config_file', default='roi_picker.json', type=str, help='specify a configuration file')
 
     # Parse the command-line arguments
     args = parser.parse_args()

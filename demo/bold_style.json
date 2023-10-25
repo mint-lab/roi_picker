@@ -1,0 +1,20 @@
+{
+    "image_scale": 1.2,
+
+    "roi_id_font_scale": 0,
+    "roi_id_font_thickness": 2,
+    "roi_point_thickness": 0,
+    "roi_line_thickness": 2,
+    "roi_polygon_thickness": 2,
+    "roi_select_thickness": 4,
+
+    "zoom_level": 10,
+    "zoom_box_radius": 10,
+    "zoom_box_margin": 5,
+    "zoom_axes_radius": 10,
+    "zoom_axes_color": [ 0, 0, 0 ],
+    "zoom_axes_thickness": 1,
+
+    "status_font_scale": 0.8,
+    "status_font_thickness": 2
+}

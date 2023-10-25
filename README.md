@@ -21,7 +21,7 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
 * Usage examples
   * `python roi_picker.py demo/miraehall_satellite.png`
     * Start _ROI Picker_ with the default ROI file (`demo/miraehall_satellite.json`) and default configuration file (`roi_picker.json`)
-  * `python roi_picker.py demo/miraehall_220722.png -r demo/miraehall_image.json`
+  * `python roi_picker.py demo/miraehall_220722.png -r demo/miraehall_camera.json`
     * Start _ROI Picker_ with the specific ROI file (`demo/miraehall_image.json`)
   * `python roi_picker.py demo/miraehall_satellite.png -c demo/bold_style.json`
     * Start _ROI Picker_ with its default ROI file with specific configuration file (`demo/bold_style.json`)
@@ -53,6 +53,17 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
     * `Ctrl`+`T`: Show and hide the s**t**atus of the selected ROI
     * `+`: Zoom up the image
     * `-`: Zoom down the image
+
+
+
+### Screenshots
+You can see the following demo if you run the above _usage examples_, respectively.
+
+<img width="50%" src="https://github.com/mint-lab/roi_picker/blob/master/demo/miraehall_satellite_demo.png" />
+
+<img width="50%" src="https://github.com/mint-lab/roi_picker/blob/master/demo/miraehall_220722_demo.png" />
+
+<img width="50%" src="https://github.com/mint-lab/roi_picker/blob/master/demo/miraehall_satellite_demo_bold.png" />
 
 
 

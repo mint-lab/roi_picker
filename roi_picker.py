@@ -64,13 +64,13 @@ class ROIPicker:
         config['roi_id_font_thickness'] = 1
         config['roi_point_radius']      = 10
         config['roi_point_thickness']   = 1
-        config['roi_line_thickness']    = 2
+        config['roi_line_thickness']    = 1
         config['roi_polygon_alpha']     = 0.7
         config['roi_polygon_thickness'] = 1
         config['roi_select_thickness']  = 2
 
         config['zoom_visible']          = True
-        config['zoom_level']            = 10
+        config['zoom_level']            = 5
         config['zoom_box_radius']       = 10
         config['zoom_box_margin']       = 10
         config['zoom_axes_radius']      = 20
@@ -120,6 +120,7 @@ class ROIPicker:
         except FileNotFoundError:
             print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
         self.select_roi_idx = len(self.roi_data) - 1
+        self.roi_id_start = max([roi['id'] for roi in self.roi_data]) + 1
 
         # Run 'ROI Picker'
         while True:
@@ -244,6 +245,7 @@ class ROIPicker:
             except FileNotFoundError:
                 print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
             self.select_roi_idx = len(self.roi_data) - 1
+            self.roi_id_start = max([roi['id'] for roi in self.roi_data]) + 1
 
         elif key == self.config['key_export_roi']:
             self.export_roi_data(self.roi_file, self.roi_data)
@@ -454,22 +456,21 @@ def write_json_file(filename, data):
 
 
 if __name__ == "__main__":
-    # # Add arguments to the parser
-    # parser = argparse.ArgumentParser(prog='ROI Picker',
-    #                                  description='A simple OpenCV tool to visualize and edit ROIs on images')
-    # parser.add_argument('image_file',
-    #                     type=str, help='Specify an image file as background')
-    # parser.add_argument('roi_file', '-r', default='',
-    #                     type=str, help='Specify a ROI file which contains ROI data')
-    # parser.add_argument('config_file', '-c', default='roi_picker.json',
-    #                     type=str, help='Specify a configuration file')
+    # Add arguments to the parser
+    parser = argparse.ArgumentParser(prog='ROI Picker',
+                                     description='A simple OpenCV tool to visualize and edit ROIs on images')
+    parser.add_argument('image_file',
+                        type=str, help='Specify an image file as background')
+    parser.add_argument('roi_file', '-r', default='',
+                        type=str, help='Specify a ROI file which contains ROI data')
+    parser.add_argument('config_file', '-c', default='roi_picker.json',
+                        type=str, help='Specify a configuration file')
 
-    # # Parse the command-line arguments
-    # args = parser.parse_args()
+    # Parse the command-line arguments
+    args = parser.parse_args()
 
-    # # Instantiate ROI Picker and run it
-    # roi_picker = ROIPicker(args.image_file, args.roi_file, args.config_file)
-    roi_picker = ROIPicker('demo/miraehall_220722.png')
+    # Instantiate ROI Picker and run it
+    roi_picker = ROIPicker(args.image_file, args.roi_file, args.config_file)
     success = roi_picker.run_gui()
-    # if not success:
-    #     parser.print_help()
+    if not success:
+        parser.print_help()

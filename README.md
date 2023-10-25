@@ -31,11 +31,13 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
 ### GUI Interface
  * :memo: Note) _ROI Picker_ does not provide any menu or button for simplicity. Its GUI inputs are totally based on mouse and keyboard.
  * **Mouse Actions**
+    * _Click_: Select a ROI
+        * If you _click_ at an existing point, the ROI which contains the point is selected.
     * _Double Click_: Add or delete a point
-        * If you _double click_ on an image, a new point will be added.
         * If you _double click_ at an existing point, the point will be removed.
         * If you _double click_ on an existing line (for line segment or polygon), a new point will be inserted on the line.
-    * `Ctrl`+_Drag_: Move the selected point
+        * If you _double click_ on an image, a new point will be added.
+    * `Ctrl`+_Drag_: Move the clicked point
  * **Keyboard Shortcuts**
     * `ESC`: Terminate _ROI Picker_
     * `Tab`: Select the next ROI

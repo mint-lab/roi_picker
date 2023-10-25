@@ -14,12 +14,14 @@ class ROIPicker:
         self.roi_file = roi_file
         self.config_file = config_file
         self.roi_data = []
-        self.roi_select_idx = -1
+        self.roi_id_start = 1
+        self.select_roi_idx = -1
+        self.select_pt_idx = -1
+        self.select_config = {}
         self.mouse_pt = [0, 0]
         self.resize_canvas = True
         self.redraw_canvas = True
         self.drag_enabled = False
-        self.drag_pt_idx = -1
         self.config = self.get_default_config()
 
         # Load `config_file` if exist
@@ -38,10 +40,11 @@ class ROIPicker:
             else:
                 self.roi_file = self.img_file + '.json'
 
-        self.config_selected = self.config.copy()
-        self.config_selected['roi_point_thickness']   = self.config['roi_select_thickness']
-        self.config_selected['roi_line_thickness']    = self.config['roi_select_thickness']
-        self.config_selected['roi_polygon_thickness'] = self.config['roi_select_thickness']
+        self.roi_id_start = self.config['roi_id_start']
+        self.select_config = self.config.copy()
+        self.select_config['roi_point_thickness']   = self.config['roi_select_thickness']
+        self.select_config['roi_line_thickness']    = self.config['roi_select_thickness']
+        self.select_config['roi_polygon_thickness'] = self.config['roi_select_thickness']
 
 
     @staticmethod
@@ -51,9 +54,8 @@ class ROIPicker:
 
         config['image_scale']           = 1.
         config['image_scale_step']      = 0.05
-
-        config['point_dist_threshold']  = 5
-        config['line_dist_threshold']   = 2
+        config['point_dist_threshold']  = 6
+        config['line_dist_threshold']   = 3
 
         config['roi_id_start']          = 1
         config['roi_id_offset']         = (-5, -7)
@@ -117,7 +119,7 @@ class ROIPicker:
             self.roi_data = self.import_roi_data(self.roi_file)
         except FileNotFoundError:
             print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
-        self.roi_select_idx = len(self.roi_data) - 1
+        self.select_roi_idx = len(self.roi_data) - 1
 
         # Run 'ROI Picker'
         while True:
@@ -131,8 +133,8 @@ class ROIPicker:
                 canvas = np.copy(img_resize)
                 for roi in self.roi_data:
                     self.draw_roi(canvas, roi, self.config)
-                if self.roi_select_idx >= 0:
-                    self.draw_roi(canvas, self.roi_data[self.roi_select_idx], self.config_selected)
+                if self.select_roi_idx >= 0:
+                    self.draw_roi(canvas, self.roi_data[self.select_roi_idx], self.select_config)
                 self.redraw_canvas = False
             canvas_copy = np.copy(canvas)
             if self.config['zoom_visible']:
@@ -156,41 +158,41 @@ class ROIPicker:
             self.mouse_pt[0] = x
             self.mouse_pt[1] = y
 
-        if self.roi_select_idx >= 0:
-            if event == cv.EVENT_LBUTTONDOWN:
-                # Start to drag a selected point
+        if event == cv.EVENT_LBUTTONDOWN:
+            # Start to drag a selected point
+            r_idx, p_idx = self.check_on_a_point((x, y), self.config['point_dist_threshold'])
+            if r_idx >= 0 and p_idx >= 0:
+                self.select_roi_idx = r_idx
+                self.select_pt_idx = p_idx
                 self.drag_enabled = buttons & cv.EVENT_FLAG_CTRLKEY
-                self.drag_pt_idx = check_on_a_point((x, y), self.roi_data[self.roi_select_idx]['pts'], self.config['point_dist_threshold'])
-
-            elif event == cv.EVENT_LBUTTONUP:
-                # Finish dragging the point
-                if self.drag_enabled and self.drag_pt_idx >= 0:
-                    self.roi_data[self.roi_select_idx]['pts'][self.drag_pt_idx] = (x, y)
-                self.drag_enabled = False
-                self.drag_pt_idx = -1
                 self.redraw_canvas = True
 
-            elif event == cv.EVENT_LBUTTONDBLCLK:
-                on_a_point = check_on_a_point((x, y), self.roi_data[self.roi_select_idx]['pts'], self.config['point_dist_threshold'])
-                if on_a_point >= 0:
-                    # Remove a selected point
-                    self.roi_data[self.roi_select_idx]['pts'].pop(on_a_point)
+        elif event == cv.EVENT_LBUTTONUP:
+            # Finish dragging the point
+            if self.drag_enabled and self.select_roi_idx >= 0 and self.select_pt_idx >= 0:
+                self.roi_data[self.select_roi_idx]['pts'][self.select_pt_idx] = (x, y)
+                self.redraw_canvas = True
+            self.drag_enabled = False
+            self.select_pt_idx = -1
+
+        elif event == cv.EVENT_LBUTTONDBLCLK:
+            r_idx, p_idx = self.check_on_a_point((x, y), self.config['point_dist_threshold'])
+            if r_idx >= 0 and p_idx >= 0:
+                # Remove a selected point
+                self.roi_data[r_idx]['pts'].pop(p_idx)
+            else:
+                if self.roi_data[self.select_roi_idx]['type'].lower().startswith('point'):
+                    # Add a new point if the selected ROI is 'points'
+                    self.roi_data[self.select_roi_idx]['pts'].append((x, y))
                 else:
-                    if self.roi_data[self.roi_select_idx]['type'].lower().startswith('points'):
-                        # Add a new point if the selected ROI is 'points'
-                        self.roi_data[self.roi_select_idx]['pts'].append((x, y))
+                    r_idx, p_idx = self.check_on_a_line((x, y), self.config['line_dist_threshold'])
+                    if r_idx >= 0 and p_idx >= 0:
+                        # Insert a new point between a selected line segment
+                        self.roi_data[r_idx]['pts'].insert(p_idx, (x, y))
                     else:
-                        if self.roi_data[self.roi_select_idx]['type'].lower().startswith('line') and len(self.roi_data[self.roi_select_idx]['pts']) > 0:
-                            on_a_line = check_on_a_line((x, y), self.roi_data[self.roi_select_idx]['pts'] + [self.roi_data[self.roi_select_idx]['pts'][0]], self.config['line_dist_threshold'])
-                        else:
-                            on_a_line = check_on_a_line((x, y), self.roi_data[self.roi_select_idx]['pts'], self.config['line_dist_threshold'])
-                        if on_a_line >= 0:
-                            # Insert a new point between a selected line segment
-                            self.roi_data[self.roi_select_idx]['pts'].insert(on_a_line, (x, y))
-                        else:
-                            # Add a new point at the end
-                            self.roi_data[self.roi_select_idx]['pts'].append((x, y))
-                self.redraw_canvas = True
+                        # Add a new point at the end
+                        self.roi_data[r_idx]['pts'].append((x, y))
+            self.redraw_canvas = True
 
 
     def process_key_inputs(self, key):
@@ -203,24 +205,27 @@ class ROIPicker:
 
         elif key == self.config['key_next_roi']:
             if len(self.roi_data) == 0:
-                self.roi_select_idx = -1
+                self.select_roi_idx = -1
             else:
-                self.roi_select_idx = (self.roi_select_idx + 1) % len(self.roi_data)
+                self.select_roi_idx = (self.select_roi_idx + 1) % len(self.roi_data)
             self.redraw_canvas = True
 
         elif key == self.config['key_add_point']:
-            self.roi_data.append({'type' : 'points', 'pts'  : [], 'color': randcolor()})
-            self.roi_select_idx = len(self.roi_data) - 1
+            self.roi_data.append({'id': self.roi_id_start, 'type': 'points', 'color': randcolor(), 'pts': []})
+            self.roi_id_start += 1
+            self.select_roi_idx = len(self.roi_data) - 1
             self.redraw_canvas = True
 
         elif key == self.config['key_add_line']:
-            self.roi_data.append({'type' : 'line', 'pts'  : [], 'color': randcolor()})
-            self.roi_select_idx = len(self.roi_data) - 1
+            self.roi_data.append({'id': self.roi_id_start, 'type': 'line', 'color': randcolor(), 'pts': []})
+            self.roi_id_start += 1
+            self.select_roi_idx = len(self.roi_data) - 1
             self.redraw_canvas = True
 
         elif key == self.config['key_add_polygon']:
-            self.roi_data.append({'type' : 'polygon', 'pts'  : [], 'color': randcolor()})
-            self.roi_select_idx = len(self.roi_data) - 1
+            self.roi_data.append({'id': self.roi_id_start, 'type': 'polygon', 'color': randcolor(), 'pts': []})
+            self.roi_id_start += 1
+            self.select_roi_idx = len(self.roi_data) - 1
             self.redraw_canvas = True
 
         elif key == self.config['key_renew']:
@@ -228,9 +233,9 @@ class ROIPicker:
             self.redraw_canvas = True
 
         elif key == self.config['key_delete_roi']:
-            if self.roi_select_idx >= 0:
-                self.roi_data.pop(self.roi_select_idx)
-            self.roi_select_idx = len(self.roi_data) - 1
+            if self.select_roi_idx >= 0:
+                self.roi_data.pop(self.select_roi_idx)
+            self.select_roi_idx = len(self.roi_data) - 1
             self.redraw_canvas = True
 
         elif key == self.config['key_import_roi']:
@@ -238,7 +243,7 @@ class ROIPicker:
                 self.roi_data = self.import_roi_data(self.roi_file)
             except FileNotFoundError:
                 print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
-            self.roi_select_idx = len(self.roi_data) - 1
+            self.select_roi_idx = len(self.roi_data) - 1
 
         elif key == self.config['key_export_roi']:
             self.export_roi_data(self.roi_file, self.roi_data)
@@ -285,18 +290,17 @@ class ROIPicker:
             if config['roi_polygon_thickness'] > 0:
                 cv.polylines(canvas, np.array([roi['pts']]).astype(np.int32), True, roi['color'], config['roi_polygon_thickness'])
 
-        for idx, pt in enumerate(roi['pts']):
+        for pt in roi['pts']:
             # Draw a point with its ID
             center = np.array(pt).astype(np.int32)
             if config['roi_point_radius'] > 0:
                 cv.circle(canvas, center, config['roi_point_radius'], roi['color'], config['roi_point_thickness'])
             if config['roi_id_font_scale'] > 0:
-                id = idx + config['roi_id_start']
                 id_pos = center + config['roi_id_offset']
-                if id >= 10: # If `id` is two-digit
+                if roi['id'] >= 10: # If `roi['id']` is two-digit
                     id_pos[0] += config['roi_id_offset'][0]
                 color_inv = [255 - v for v in roi['color']]
-                putText(canvas, str(id), id_pos, config['roi_id_font'], config['roi_id_font_scale'], roi['color'], config['roi_id_font_thickness'], color_inv)
+                putText(canvas, str(roi['id']), id_pos, config['roi_id_font'], config['roi_id_font_scale'], roi['color'], config['roi_id_font_thickness'], color_inv)
             else:
                 cv.line(canvas, center - (config['roi_point_radius'], 0), center + (config['roi_point_radius'], 0), roi['color'], config['roi_id_font_thickness'])
                 cv.line(canvas, center - (0, config['roi_point_radius']), center + (0, config['roi_point_radius']), roi['color'], config['roi_id_font_thickness'])
@@ -329,8 +333,8 @@ class ROIPicker:
 
     def print_status(self, canvas):
         '''Print the status of the selected ROI'''
-        if self.roi_select_idx >= 0:
-            roi = self.roi_data[self.roi_select_idx]
+        if self.select_roi_idx >= 0:
+            roi = self.roi_data[self.select_roi_idx]
             status = f'{roi["type"]}: {len(roi["pts"])} points'
             status_color = roi['color']
         else:
@@ -340,6 +344,43 @@ class ROIPicker:
         status += f' | mouse: ({pt[0]:.1f}, {pt[1]:.1f})'
         status += f' | zoom: {self.config["image_scale"]:.1f}'
         putText(canvas, status, self.config['status_offset'], self.config['status_font'], self.config['status_font_scale'], status_color, self.config['status_font_thickness'])
+
+
+    def check_on_a_point(self, query, threshold):
+        '''Check whether `query` is on any point in `self.roi_data`, return its ROI and point indices if then'''
+        min_idx = (-1, -1)
+        min_dist = 10000
+        for r_idx, roi in enumerate(self.roi_data):
+            for p_idx, pt in enumerate(roi['pts']):
+                dist = distance_point2point(query, pt)
+                if dist < min_dist:
+                    min_idx = (r_idx, p_idx)
+                    min_dist = dist
+        if min_dist <= threshold:
+            return min_idx
+        else:
+            return (-1, -1)
+
+
+    def check_on_a_line(self, query, threshold):
+        '''Check whether `query` is on any line made by `self.roi_data`, return its second index if then'''
+        min_idx = (-1, -1)
+        min_dist = 10000
+        for r_idx, roi in enumerate(self.roi_data):
+            line_range = range(0)
+            if roi['type'].lower().startswith('line'):
+                line_range = range(len(roi['pts']) - 1)
+            elif roi['type'].lower().startswith('polygon'):
+                line_range = range(-1, len(roi['pts']) - 1) # To check a line from the last to the first
+            for p_idx in range(len(roi['pts']) - 1):
+                dist = distance_point2line(query, roi['pts'][p_idx], roi['pts'][p_idx+1])
+                if dist < min_dist:
+                    min_idx = (r_idx, p_idx+1)
+                    min_dist = dist
+        if min_dist <= threshold:
+            return min_idx
+        else:
+            return (-1, -1)
 
 
     @staticmethod
@@ -374,36 +415,6 @@ def distance_point2point(pt1, pt2):
 def distance_point2line(pt, line_pt1, line_pt2):
     '''Calculate distacne from `pt` to a line segment `(line_pt1, line_pt2)`'''
     return distance_point2point(line_pt1, pt) + distance_point2point(line_pt2, pt) - distance_point2point(line_pt1, line_pt2)
-
-
-def check_on_a_point(query, pts, threshold):
-    '''Check whether `query` is on any point in `pts`, return its index if then'''
-    min_idx = -1
-    min_dist = 10000
-    for idx, pt in enumerate(pts):
-        dist = distance_point2point(query, pt)
-        if dist < min_dist:
-            min_idx = idx
-            min_dist = dist
-    if min_dist <= threshold:
-        return min_idx
-    else:
-        return -1
-
-
-def check_on_a_line(query, pts, threshold):
-    '''Check whether `query` is on any line made by `pts`, return its first index if then'''
-    min_idx = -1
-    min_dist = 10000
-    for idx in range(len(pts) - 1):
-        dist = distance_point2line(query, pts[idx], pts[idx-1])
-        if dist < min_dist:
-            min_idx = idx
-            min_dist = dist
-    if min_dist <= threshold:
-        return min_idx
-    else:
-        return -1
 
 
 def randcolor():

@@ -35,7 +35,7 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
         * If you _double click_ on an image, a new point will be added.
         * If you _double click_ at an existing point, the point will be removed.
         * If you _double click_ on an existing line (for line segment or polygon), a new point will be inserted on the line.
-    * _Drag_: Move the selected point
+    * `Ctrl`+_Drag_: Move the selected point
  * **Keyboard Shortcuts**
     * `ESC`: Terminate _ROI Picker_
     * `Tab`: Select the next ROI
@@ -46,6 +46,7 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
     * `Ctrl`+`D`: **D**elete the selected ROI
     * `Ctrl`+`I`: **I**mport ROI data from the ROI file
     * `Ctrl`+`E`: **E**xport ROI data to the ROI file
+    * `Ctrl`+`F`: Export con**f**iguration to a JSON file
     * `Ctrl`+`Z`: Show and hide the image **z**oom
     * `Ctrl`+`T`: Show and hide the s**t**atus of the selected ROI
     * `+`: Zoom up the image

@@ -6,7 +6,11 @@ from random import randrange
 
 
 class ROIPicker:
-    '''ROI Picker implementation'''
+    '''
+    ROI Picker: A simple OpenCV tool to visualize and edit ROIs on images
+    * Github repository: https://github.com/mint-lab/roi_picker/
+    * Authors: Nguyen Cong Quy, Sunglok Choi
+    '''
 
     def __init__(self, img_file, roi_file='', config_file='roi_picker.json'):
         '''The constructor'''
@@ -26,8 +30,9 @@ class ROIPicker:
 
         # Load `config_file` if exist
         try:
-            config = read_json_file(config_file)
-            self.config.update(config)
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+                self.config.update(config)
         except FileNotFoundError:
             print('warning: cannot open the configuration file, ' + config_file)
             print('         ROI Picker will use the default configuration.')
@@ -119,8 +124,6 @@ class ROIPicker:
             self.roi_data = self.import_roi_data(self.roi_file)
         except FileNotFoundError:
             print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
-        self.select_roi_idx = len(self.roi_data) - 1
-        self.roi_id_start = max([roi['id'] for roi in self.roi_data]) + 1
 
         # Run 'ROI Picker'
         while True:
@@ -182,17 +185,13 @@ class ROIPicker:
                 # Remove a selected point
                 self.roi_data[r_idx]['pts'].pop(p_idx)
             else:
-                if self.roi_data[self.select_roi_idx]['type'].lower().startswith('point'):
-                    # Add a new point if the selected ROI is 'points'
+                r_idx, p_idx = self.check_on_a_line((x, y), self.config['line_dist_threshold'])
+                if r_idx >= 0 and p_idx >= 0:
+                    # Insert a new point between a selected line segment
+                    self.roi_data[r_idx]['pts'].insert(p_idx, (x, y))
+                elif self.select_roi_idx >= 0:
+                    # Add a new point at the end
                     self.roi_data[self.select_roi_idx]['pts'].append((x, y))
-                else:
-                    r_idx, p_idx = self.check_on_a_line((x, y), self.config['line_dist_threshold'])
-                    if r_idx >= 0 and p_idx >= 0:
-                        # Insert a new point between a selected line segment
-                        self.roi_data[r_idx]['pts'].insert(p_idx, (x, y))
-                    else:
-                        # Add a new point at the end
-                        self.roi_data[r_idx]['pts'].append((x, y))
             self.redraw_canvas = True
 
 
@@ -244,14 +243,14 @@ class ROIPicker:
                 self.roi_data = self.import_roi_data(self.roi_file)
             except FileNotFoundError:
                 print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
-            self.select_roi_idx = len(self.roi_data) - 1
-            self.roi_id_start = max([roi['id'] for roi in self.roi_data]) + 1
 
         elif key == self.config['key_export_roi']:
             self.export_roi_data(self.roi_file, self.roi_data)
 
         elif key == self.config['key_export_config']:
-            write_json_file(self.config_file, self.config)
+            json_obj = json.dumps(self.config, indent=4)
+            with open(self.config_file, 'w') as f:
+                f.write(json_obj)
 
         elif key == self.config['key_show_zoom']:
             self.config['zoom_visible'] = not self.config['zoom_visible']
@@ -337,7 +336,7 @@ class ROIPicker:
         '''Print the status of the selected ROI'''
         if self.select_roi_idx >= 0:
             roi = self.roi_data[self.select_roi_idx]
-            status = f'{roi["type"]}: {len(roi["pts"])} points'
+            status = f'id: {roi["id"]} | type: {roi["type"]} | # of points: {len(roi["pts"])}'
             status_color = roi['color']
         else:
             status = 'Empty ROI'
@@ -385,18 +384,13 @@ class ROIPicker:
             return (-1, -1)
 
 
-    @staticmethod
-    def resize_roi_data(roi_data, scale):
-        '''Resize points in `roi_data` with `scale` factor'''
-        for roi in roi_data:
-            for idx, pt in enumerate(roi['pts']):
-                roi['pts'][idx] = (scale * pt[0], scale * pt[1])
-
-
     def import_roi_data(self, filename):
         '''Import ROI data from the file `filename`'''
-        data = read_json_file(filename)
+        data = self.read_roi_file(filename)
         self.resize_roi_data(data, self.config['image_scale'])
+        self.select_roi_idx = len(data) - 1
+        if self.roi_data:
+            self.roi_id_start = max([roi['id'] for roi in data]) + 1
         return data
 
 
@@ -404,7 +398,29 @@ class ROIPicker:
         '''Export `roi_data` to the file `filename`'''
         data = roi_data.copy()
         self.resize_roi_data(data, 1 / self.config['image_scale'])
-        write_json_file(filename, data)
+        return self.write_roi_file(filename, data)
+
+
+    def read_roi_file(self, filename):
+        '''Read ROI data from the given JSON file `filename`'''
+        with open(filename, 'r') as f:
+            roi_data = json.load(f)
+            return roi_data
+
+
+    def write_roi_file(self, filename, roi_data):
+        '''Write the given ROI data to the given JSON file `filename`'''
+        json_obj = json.dumps(roi_data, indent=4)
+        with open(filename, 'w') as f:
+            f.write(json_obj)
+
+
+    @staticmethod
+    def resize_roi_data(roi_data, scale):
+        '''Resize points in `roi_data` with `scale` factor'''
+        for roi in roi_data:
+            for idx, pt in enumerate(roi['pts']):
+                roi['pts'][idx] = (scale * pt[0], scale * pt[1])
 
 
 def distance_point2point(pt1, pt2):
@@ -441,23 +457,9 @@ def putText(img, text, org_tl, fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.5, 
         org_tl += [0, h * lineSpacing]
 
 
-def read_json_file(filename):
-    '''Read an object from the given JSON file `filename`'''
-    with open(filename, 'r') as f:
-        data = json.load(f)
-        return data
-
-
-def write_json_file(filename, data):
-    '''Write the given object to the given file `filename`'''
-    json_obj = json.dumps(data, indent=4)
-    with open(filename, 'w') as f:
-        f.write(json_obj)
-
-
 if __name__ == "__main__":
     # Add arguments to the parser
-    parser = argparse.ArgumentParser(prog='ROI Picker', description='A simple OpenCV tool to visualize and edit ROIs on images')
+    parser = argparse.ArgumentParser(prog='roi_picker', description='ROI Picker: A simple OpenCV tool to visualize and edit ROIs on images')
     parser.add_argument('image_file', type=str, help='specify an image file as background')
     parser.add_argument('-r', '--roi_file', default='', type=str, help='specify a ROI file which contains ROI data')
     parser.add_argument('-c', '--config_file', default='roi_picker.json', type=str, help='specify a configuration file')

@@ -1,6 +1,7 @@
 import argparse
 import json
 import numpy as np
+import matplotlib.colors as mcolors
 import cv2 as cv
 from random import randrange
 
@@ -87,6 +88,10 @@ class ROIPicker:
         config['status_font']           = cv.FONT_HERSHEY_DUPLEX
         config['status_font_scale']     = 0.6
         config['status_font_thickness'] = 1
+
+        palette = [mcolors.ColorConverter.to_rgb(rgb) for rgb in mcolors.TABLEAU_COLORS.values()]
+        palette[7] = (0., 0., 0.) # Make gray to black for better visibility
+        config['palette'] = [(int(255* b), int(255* g), int(255* r)) for r, g, b in palette]
 
         config['key_exit']              = 27
         config['key_next_roi']          = ord('\t')
@@ -211,19 +216,19 @@ class ROIPicker:
             self.redraw_canvas = True
 
         elif key == self.config['key_add_point']:
-            self.roi_data.append({'id': self.roi_id_start, 'type': 'points', 'color': randcolor(), 'pts': []})
+            self.roi_data.append({'id': self.roi_id_start, 'type': 'points', 'color': self.get_color(self.roi_id_start), 'pts': []})
             self.roi_id_start += 1
             self.select_roi_idx = len(self.roi_data) - 1
             self.redraw_canvas = True
 
         elif key == self.config['key_add_line']:
-            self.roi_data.append({'id': self.roi_id_start, 'type': 'line', 'color': randcolor(), 'pts': []})
+            self.roi_data.append({'id': self.roi_id_start, 'type': 'line', 'color': self.get_color(self.roi_id_start), 'pts': []})
             self.roi_id_start += 1
             self.select_roi_idx = len(self.roi_data) - 1
             self.redraw_canvas = True
 
         elif key == self.config['key_add_polygon']:
-            self.roi_data.append({'id': self.roi_id_start, 'type': 'polygon', 'color': randcolor(), 'pts': []})
+            self.roi_data.append({'id': self.roi_id_start, 'type': 'polygon', 'color': self.get_color(self.roi_id_start), 'pts': []})
             self.roi_id_start += 1
             self.select_roi_idx = len(self.roi_data) - 1
             self.redraw_canvas = True
@@ -415,6 +420,14 @@ class ROIPicker:
             f.write(json_obj)
 
 
+    def get_color(self, id):
+        '''Return a color in `self.config_palette`'''
+        palette_size = len(self.config['palette'])
+        if palette_size > 0:
+            return self.config['palette'][id % palette_size]
+        return (randrange(255), randrange(255), randrange(255)) # A random color
+
+
     @staticmethod
     def resize_roi_data(roi_data, scale):
         '''Resize points in `roi_data` with `scale` factor'''
@@ -433,11 +446,6 @@ def distance_point2point(pt1, pt2):
 def distance_point2line(pt, line_pt1, line_pt2):
     '''Calculate distacne from `pt` to a line segment `(line_pt1, line_pt2)`'''
     return distance_point2point(line_pt1, pt) + distance_point2point(line_pt2, pt) - distance_point2point(line_pt1, line_pt2)
-
-
-def randcolor():
-    '''Return a random color'''
-    return (randrange(255), randrange(255), randrange(255))
 
 
 def putText(img, text, org_tl, fontFace=cv.FONT_HERSHEY_SIMPLEX, fontScale=0.5, color=(255, 255, 255), thickness=1, colorOutline=(0, 0, 0), thicknessOutline=2, lineSpacing=1.5):

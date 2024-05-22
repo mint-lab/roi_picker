@@ -348,7 +348,7 @@ class ROIPicker:
             status_color = (0, 255, 0)
         pt = (self.mouse_pt[0] / self.config['image_scale'], self.mouse_pt[1] / self.config['image_scale'])
         status += f' | mouse: ({pt[0]:.1f}, {pt[1]:.1f})'
-        status += f' | zoom: {self.config["image_scale"]:.1f}'
+        status += f' | zoom: {self.config["image_scale"]:.2f}'
         putText(canvas, status, self.config['status_offset'], self.config['status_font'], self.config['status_font_scale'], status_color, self.config['status_font_thickness'])
 
 

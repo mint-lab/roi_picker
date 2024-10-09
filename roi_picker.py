@@ -1,5 +1,6 @@
 import argparse
 import json
+import copy
 import numpy as np
 import matplotlib.colors as mcolors
 import cv2 as cv
@@ -89,9 +90,7 @@ class ROIPicker:
         config['status_font_scale']     = 0.6
         config['status_font_thickness'] = 1
 
-        palette = [mcolors.ColorConverter.to_rgb(rgb) for rgb in mcolors.TABLEAU_COLORS.values()]
-        palette[7] = (0., 0., 0.) # Make gray to black for better visibility
-        config['palette'] = [(int(255* b), int(255* g), int(255* r)) for r, g, b in palette]
+        config['palette'] = [(0, 0, 0), (0, 0, 255), (0, 255, 0), (255, 0, 0), (255, 255, 0), (0, 255, 255), (255, 0, 255), (255, 255, 255), (128, 128, 0), (128, 0, 128)]
 
         config['key_exit']              = 27
         config['key_next_roi']          = ord('\t')
@@ -100,7 +99,7 @@ class ROIPicker:
         config['key_add_polygon']       = ord('G') - ord('A') + 1
         config['key_renew']             = ord('R') - ord('A') + 1
         config['key_delete_roi']        = ord('D') - ord('A') + 1
-        config['key_import_roi']        = ord('I') - ord('A') + 1
+        config['key_import_roi']        = ord('M') - ord('A') + 1
         config['key_export_roi']        = ord('E') - ord('A') + 1
         config['key_export_config']     = ord('F') - ord('A') + 1
         config['key_show_zoom']         = ord('Z') - ord('A') + 1
@@ -115,6 +114,7 @@ class ROIPicker:
     def run_gui(self, wnd_name='ROI Picker', wait_msec=1):
         '''Run 'ROI Picker' with OpenCV GUI'''
         # Create a window and register a callback function to handle mouse events
+        wnd_name += ': ' + self.roi_file
         cv.namedWindow(wnd_name, cv.WINDOW_AUTOSIZE)
         cv.setMouseCallback(wnd_name, self.process_mouse_events)
 
@@ -126,7 +126,7 @@ class ROIPicker:
 
         # Load `self.roi_file` if exist
         try:
-            self.roi_data = self.import_roi_data(self.roi_file)
+            self.import_roi_data(self.roi_file)
         except FileNotFoundError:
             print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
 
@@ -235,6 +235,8 @@ class ROIPicker:
 
         elif key == self.config['key_renew']:
             self.roi_data.clear()
+            self.roi_id_start = 1
+            self.select_roi_idx = -1
             self.redraw_canvas = True
 
         elif key == self.config['key_delete_roi']:
@@ -245,7 +247,8 @@ class ROIPicker:
 
         elif key == self.config['key_import_roi']:
             try:
-                self.roi_data = self.import_roi_data(self.roi_file)
+                self.import_roi_data(self.roi_file)
+                self.redraw_canvas = True
             except FileNotFoundError:
                 print('warning: cannot open the corresponding ROI file, ' + self.roi_file)
 
@@ -391,17 +394,19 @@ class ROIPicker:
 
     def import_roi_data(self, filename):
         '''Import ROI data from the file `filename`'''
-        data = self.read_roi_file(filename)
-        self.resize_roi_data(data, self.config['image_scale'])
-        self.select_roi_idx = len(data) - 1
+        self.roi_data = self.read_roi_file(filename)
+        self.resize_roi_data(self.roi_data, self.config['image_scale'])
+        for roi in self.roi_data:
+            if 'color' not in roi:
+                roi['color'] = self.get_color(roi['id'])
+        self.select_roi_idx = len(self.roi_data) - 1
         if self.roi_data:
-            self.roi_id_start = max([roi['id'] for roi in data]) + 1
-        return data
+            self.roi_id_start = max([roi['id'] for roi in self.roi_data]) + 1
 
 
     def export_roi_data(self, filename, roi_data):
         '''Export `roi_data` to the file `filename`'''
-        data = roi_data.copy()
+        data = [copy.deepcopy(roi) for roi in roi_data if len(roi['pts']) > 0]
         self.resize_roi_data(data, 1 / self.config['image_scale'])
         return self.write_roi_file(filename, data)
 

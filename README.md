@@ -52,7 +52,7 @@ The above shapes are all represented as `[(x1, y1), (x2, y2), ..., (xn, yn)]`.
   * `Ctrl`+`G`: Add a new poly**g**on
   * `Ctrl`+`R`: **R**enew _ROI Picker_ (Clear all ROIs)
   * `Ctrl`+`D`: **D**elete the selected ROI
-  * `Ctrl`+`I`: **I**mport ROI data from the ROI file
+  * `Ctrl`+`M`: I**m**port ROI data from the ROI file
   * `Ctrl`+`E`: **E**xport ROI data to the ROI file
   * `Ctrl`+`F`: Export con**f**iguration to a JSON file
   * `Ctrl`+`Z`: Show and hide the image **z**oom
